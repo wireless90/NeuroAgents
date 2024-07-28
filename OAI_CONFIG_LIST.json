@@ -1,0 +1,11 @@
+[
+    {
+        "model": "neuroengine-model",
+        "model_client_cls": "NeuroengineClient",
+        "service_name": "Neuroengine-Large",
+        "server_address": "api.neuroengine.ai",
+        "server_port": 443,
+        "key": "your_api_key",
+        "verify_ssl": true
+    }
+]
