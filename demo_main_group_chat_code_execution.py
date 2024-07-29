@@ -12,9 +12,7 @@ CODE_GENERATOR_SYS_MESSAGE = ("You are an intelligent AI that generates python p
                              "The code you generated will be executed by code_generator_agent.")
 
 
-CHAT_MANAGER_SYS_MESSAGE = ("1. task_producer_agent will give a task."
-                            "2. The task involves code_generator_agent to create python script."
-                            "3. Code executor will execute the python code.")
+CHAT_MANAGER_SYS_MESSAGE = ("Agents are to solve a given task.")
 
 TASK_PRODUCER_SYS_MESSAGE = ("You are an intelligent AI that reiterates a task more clearly.")
 
@@ -49,4 +47,4 @@ group_chat_manager = GroupChatManager(name="group_chat_agent", llm_config=llm_co
 group_chat_manager.register_model_client(model_client_cls=NeuroengineClient)
 
 # Initiate chat
-task_producer_agent.initiate_chat(group_chat_manager, message="I need to know the 12th fibonacci number using python to solve.")
+task_producer_agent.initiate_chat(group_chat_manager, message="I need to know the 10th fibonacci number using python to solve.")
