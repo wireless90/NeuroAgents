@@ -1,4 +1,4 @@
-# register_neuroengine.py
+
 import json
 from neuroengine_client import NeuroengineClient  # Ensure correct case
 from autogen import AssistantAgent, UserProxyAgent, config_list_from_json, ConversableAgent

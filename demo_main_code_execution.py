@@ -14,16 +14,7 @@ code_executor_agent :ConversableAgent = UserProxyAgent(
     name="code_executor_agent",
     human_input_mode="NEVER",
     code_execution_config={"executor": executor},
-    is_termination_msg=lambda x: x is not None and x["content"] is not None and "terminate" in x["content"].lower() or "goodbye" in x["content"].lower()
 )
-
-# code_executor_agent :ConversableAgent = ConversableAgent(
-#     name="code_executor_agent",
-#     llm_config=False,
-#     human_input_mode="NEVER",
-#     code_execution_config= {"executor": executor},
-#     is_termination_msg=lambda x: x is not None and x["content"] is not None and "terminate" in x["content"].lower() or "goodbye" in x["content"].lower()
-# )
 
 # Create the configuration for the AssistantAgent
 config_list_custom = config_list_from_json(
@@ -35,6 +26,10 @@ config_list_custom = config_list_from_json(
 code_generator_agent = AssistantAgent(
     name="code_generator_agent",
     llm_config={"config_list": config_list_custom},
+    system_message="You are an intelligent AI that generates python code as requested."
+    "The code you generated will be executed by another agent.",
+    # "Once you received its result, print it and terminate by saying TERMINATE."
+    is_termination_msg=lambda x: x is not None and x["content"] is not None and "execution succeeded" in x["content"].lower() or "goodbye" in x["content"].lower()
 )
 
 
