@@ -40,10 +40,6 @@ group_chat = GroupChat(agents=[bob_agent, joe_agent, cathy_agent], messages=[], 
 group_chat_manager = GroupChatManager(name="master_agent", llm_config=llm_configuration, groupchat=group_chat, system_message=MASTER_SYS_MESSAGE, is_termination_msg=lambda x: x is not None and x["content"] is not None and "terminate" in x["content"].lower() or "goodbye" in x["content"].lower())
 group_chat_manager.register_model_client(model_client_cls=NeuroengineClient)
 
-# default_agent = AssistantAgent(name="default_agent",  llm_config=llm_configuration)
-# default_agent.register_model_client(model_client_cls=NeuroengineClient)
-# group_chat_manager.client = default_agent.client
-
 # Initiate chat
 v = joe_agent.initiate_chat(group_chat_manager, message="Hi candidate cathy and bob.", summary_method="reflection_with_llm")
 print(v.summary)
