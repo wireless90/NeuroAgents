@@ -29,7 +29,8 @@ class NeuroengineClient:
         # Convert the list of messages into a single prompt
         # TODO See if needs a prompt summary
         prompt = "\n".join([f'{msg["role"]}:{msg["content"]}' for msg in messages])
-        
+        if params.get('functions', False):
+            prompt += f"\nAvailable functions:{params['functions']}"
         response = self.neuroengine.request(prompt, max_new_len=4000)
         
         prompt_tokens = len(prompt.split())
@@ -38,10 +39,15 @@ class NeuroengineClient:
 
         if "function_call" in response:
             # Convert the string to a Python dictionary
-            data = json.loads(response)
+            print("woooohoo function_call mann!!!")
+            data = json.loads(response) # dict type
 
             # Extract the function_call dictionary
             function_call_data = data['function_call']
+            function_call_data['arguments'] = json.dumps(function_call_data['arguments'])
+            
+            print("Function call data extracted...")
+            print(function_call_data)
             # Create an instance of FunctionCall
             function_call = FunctionCall(**function_call_data)
 
@@ -81,21 +87,40 @@ class NeuroengineClient:
 
     # Function to convert FunctionCall instance to JSON string
     def _function_call_to_json_string(self, function_call: FunctionCall) -> str:
-        # Convert FunctionCall instance to a dictionary
-        function_call_dict = function_call.model_dump()
-
-        # Ensure the arguments field is a JSON string
-        function_call_dict['arguments'] = json.dumps(json.loads(function_call_dict['arguments']))
-
-        # Create the final dictionary structure
-        final_dict = {"function_call": function_call_dict}
+        final_dict: dict = self._function_call_to_dict(function_call)
 
         # Convert the final dictionary to a JSON string
         return json.dumps(final_dict)
 
-    def message_retrieval(self, response: ChatCompletion) -> List[str]:
-        return [self._function_call_to_json_string(choice.message.function_call) if choice.message.function_call is not None else choice.message.content  for choice in response.choices]
+    # Function to convert FunctionCall instance to JSON string
+    def _function_call_to_dict(self, function_call: FunctionCall) -> str:
+        # Convert FunctionCall instance to a dictionary
+        function_call_dict = function_call.model_dump()
+        function_name: str = function_call_dict['name']
 
+        # Ensure the arguments field is a JSON string
+        function_call_dict['arguments'] = json.dumps(json.loads(function_call_dict['arguments']))
+        # Create the final dictionary structure
+        final_dict = {"function_call": function_call_dict}
+        # final_dict = {"function_call": function_call_dict, "role": "function", 'name':function_name}
+
+        
+        return final_dict
+    
+    def message_retrieval(self, response: ChatCompletion) -> List[str]:
+        msgs = []
+        for choice in response.choices:
+            if choice.message.function_call is not None:
+                func_json_string: str= self._function_call_to_json_string(choice.message.function_call)
+                func_dict: dict = self._function_call_to_dict(choice.message.function_call)
+                msgs.append(func_dict)
+            else :
+                msgs.append(choice.message.content)
+
+        return msgs
+
+        # return [self._function_call_to_json_string(choice.message.function_call) if choice.message.function_call is not None else choice.message.content  for choice in response.choices]
+    
     def cost(self, response: ChatCompletion) -> float:
         return 0.0
 
