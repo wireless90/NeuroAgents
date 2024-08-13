@@ -23,32 +23,31 @@ class NeuroengineClient:
         self.id = 1
 
     def create(self, params: Dict[str, Any]) -> ChatCompletion:
-        #print("Create method called with params:", params)  # Debug statement
         messages = params["messages"]
         
         # Convert the list of messages into a single prompt
-        # TODO See if needs a prompt summary
         prompt = "\n".join([f'{msg["role"]}:{msg["content"]}' for msg in messages])
+        
+        # Check the length of the prompt and handle if it exceeds 120k tokens
+        prompt_tokens = len(prompt.split())
+        if prompt_tokens > 120000:
+            # Implement context compression or truncation
+            prompt = self.compress_or_truncate_prompt(prompt, 120000)
+
         if params.get('functions', False):
             prompt += f"\nAvailable functions:{params['functions']}"
-        response = self.neuroengine.request(prompt, max_new_len=4000)
         
-        prompt_tokens = len(prompt.split())
+        # Request response from neuroengine
+        response = self.neuroengine.request(prompt, max_new_len=120000)
+        
         completion_tokens = len(response.split())
         total_tokens = prompt_tokens + completion_tokens
 
+        # Handle function calls in the response
         if "function_call" in response:
-            # Convert the string to a Python dictionary
-            print("woooohoo function_call mann!!!")
-            data = json.loads(response) # dict type
-
-            # Extract the function_call dictionary
+            data = json.loads(response)
             function_call_data = data['function_call']
             function_call_data['arguments'] = json.dumps(function_call_data['arguments'])
-            
-            print("Function call data extracted...")
-            print(function_call_data)
-            # Create an instance of FunctionCall
             function_call = FunctionCall(**function_call_data)
 
             message = ChatCompletionMessage(
@@ -58,13 +57,13 @@ class NeuroengineClient:
                 tool_calls=None
             )
         else:
-
             message = ChatCompletionMessage(
                 role="assistant",
                 content=response,
                 function_call=None,
                 tool_calls=None
             )
+        
         choices = [Choice(finish_reason="stop", index=0, message=message)]
 
         usage = SimpleNamespace(
@@ -74,16 +73,22 @@ class NeuroengineClient:
         )
 
         chat_completion = ChatCompletion(
-            id=str(self.id),  # Generate or fetch a unique ID as per your requirements
+            id=str(self.id),
             created=int(time.time()),
             object='chat.completion',
             model=self.model_name,
             choices=choices,
-            #usage=usage,
-            cost=0.0  # Adjust the cost calculation as needed
+            cost=0.0
         )
         self.id += 1
         return chat_completion
+
+    def compress_or_truncate_prompt(self, prompt: str, max_tokens: int) -> str:
+        # Example implementation: simple truncation
+        tokens = prompt.split()
+        if len(tokens) > max_tokens:
+            return " ".join(tokens[-max_tokens:])
+        return prompt
 
     # Function to convert FunctionCall instance to JSON string
     def _function_call_to_json_string(self, function_call: FunctionCall) -> str:
